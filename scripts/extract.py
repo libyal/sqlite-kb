@@ -11,38 +11,9 @@ from dfvfs.helpers import command_line as dfvfs_command_line
 from dfvfs.helpers import volume_scanner as dfvfs_volume_scanner
 from dfvfs.lib import errors as dfvfs_errors
 
-from dfimagetools import definitions as dfimagetools_definitions
-from dfimagetools import file_entry_lister
 from dfimagetools import helpers
 
 from sqliterc import schema_extractor
-
-
-def GetDisplayPath(path_segments, data_stream_name):
-  """Retrieves a path to display.
-
-  Args:
-    path_segments (list[str]): path segments of the full path of the file
-        entry.
-    data_stream_name (str): name of the data stream.
-
-  Returns:
-    str: path to display.
-  """
-  display_path = ''
-
-  path_segments = [
-      segment.translate(
-          dfimagetools_definitions.NON_PRINTABLE_CHARACTER_TRANSLATION_TABLE)
-      for segment in path_segments]
-  display_path = ''.join([display_path, '/'.join(path_segments)])
-
-  if data_stream_name:
-    data_stream_name = data_stream_name.translate(
-        dfimagetools_definitions.NON_PRINTABLE_CHARACTER_TRANSLATION_TABLE)
-    display_path = ':'.join([display_path, data_stream_name])
-
-  return display_path or '/'
 
 
 def Main():
@@ -135,49 +106,25 @@ def Main():
   volume_scanner_options.volumes = mediator.ParseVolumeIdentifiersString(
       options.volumes)
 
-  entry_lister = file_entry_lister.FileEntryLister(mediator=mediator)
+  extractor = schema_extractor.SQLiteSchemaExtractor(mediator=mediator)
 
   try:
-    base_path_specs = entry_lister.GetBasePathSpecs(
-        options.source, options=volume_scanner_options)
-    if not base_path_specs:
-      print('No supported file system found in source.')
-      print('')
-      return False
-
-    extractor = schema_extractor.SQLiteSchemaExtractor()
-
-    for file_entry, path_segments in entry_lister.ListFileEntries(
-        base_path_specs):
-      if file_entry.size < 16:
-        continue
-
-      file_object = file_entry.GetFileObject()
-      if not extractor.CheckSignature(file_object):
-        continue
-
-      display_path = GetDisplayPath(path_segments, '')
-      logging.info(f'Extracting schema from database file: {display_path:s}')
-
-      database_schema = extractor.GetDatabaseSchemaFromFileObject(file_object)
-      if not database_schema:
-        logging.warning(
-            f'Unable to determine schema from database file: {display_path:s}')
-        continue
+    for path_segments, database_schema in extractor.ExtractSchemas(
+        options.source, options=volume_scanner_options):
 
       # TODO: add support to set output format.
       output_text = extractor.FormatSchema(database_schema, 'yaml')
       if not options.output:
         print(output_text)
-        continue
+      else:
+        output_file = os.path.join(
+            options.output, f'{path_segments[-1]:s}.yaml')
+        if os.path.exists(output_file):
+          logging.warning(f'Output file: {output_file:s} already existst.')
+          continue
 
-      output_file = os.path.join(options.output, f'{file_entry.name:s}.yaml')
-      if os.path.exists(output_file):
-        logging.warning(f'Output file: {output_file:s} already existst.')
-        continue
-
-      with open(output_file, 'w', encoding='utf-8') as output_file_object:
-        output_file_object.write(output_text)
+        with open(output_file, 'w', encoding='utf-8') as output_file_object:
+          output_file_object.write(output_text)
 
   except dfvfs_errors.ScannerError as exception:
     print(f'[ERROR] {exception!s}', file=sys.stderr)

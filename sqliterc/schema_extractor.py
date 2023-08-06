@@ -7,6 +7,9 @@ import sqlite3
 import tempfile
 import textwrap
 
+from dfimagetools import definitions as dfimagetools_definitions
+from dfimagetools import file_entry_lister
+
 
 class ColumnDefinition(object):
   """Column definition.
@@ -33,6 +36,59 @@ class SQLiteSchemaExtractor(object):
       'FROM sqlite_master '
       'WHERE type = "table" AND tbl_name != "xp_proc" '
       'AND tbl_name != "sqlite_sequence"')
+
+  def __init__(self, mediator=None):
+    """Initializes a SQLite database file schema extractor.
+
+    Args:
+      mediator (Optional[dfvfs.VolumeScannerMediator]): a volume scanner
+          mediator.
+    """
+    super(SQLiteSchemaExtractor, self).__init__()
+    self._mediator = mediator
+
+  def _CheckSignature(self, file_object):
+    """Checks the signature of a given database file-like object.
+
+    Args:
+      file_object (dfvfs.FileIO): file-like object of the database.
+
+    Returns:
+      bool: True if the signature matches that of a SQLite database, False
+          otherwise.
+    """
+    if not file_object:
+      return False
+
+    file_object.seek(0, os.SEEK_SET)
+    file_data = file_object.read(16)
+    return file_data == b'SQLite format 3\x00'
+
+  def _GetDisplayPath(self, path_segments, data_stream_name):
+    """Retrieves a path to display.
+
+    Args:
+      path_segments (list[str]): path segments of the full path of the file
+          entry.
+      data_stream_name (str): name of the data stream.
+
+    Returns:
+      str: path to display.
+    """
+    display_path = ''
+
+    path_segments = [
+        segment.translate(
+            dfimagetools_definitions.NON_PRINTABLE_CHARACTER_TRANSLATION_TABLE)
+        for segment in path_segments]
+    display_path = ''.join([display_path, '/'.join(path_segments)])
+
+    if data_stream_name:
+      data_stream_name = data_stream_name.translate(
+          dfimagetools_definitions.NON_PRINTABLE_CHARACTER_TRANSLATION_TABLE)
+      display_path = ':'.join([display_path, data_stream_name])
+
+    return display_path or '/'
 
   def _FormatSchemaAsText(self, schema):
     """Formats a schema into a word-wrapped string.
@@ -139,22 +195,74 @@ class SQLiteSchemaExtractor(object):
     lines.append('')
     return '\n'.join(lines)
 
-  def CheckSignature(self, file_object):
-    """Checks the signature of a given database file-like object.
+  def _GetDatabaseSchemaFromFileObject(self, file_object):
+    """Retrieves schema from given database file-like object.
 
     Args:
       file_object (dfvfs.FileIO): file-like object of the database.
 
     Returns:
-      bool: True if the signature matches that of a SQLite database, False
-          otherwise.
+      dict[str, str]: schema as an SQL query per table name or None if
+          the schema could not be retrieved.
     """
-    if not file_object:
-      return False
+    # TODO: find an alternative solution that can read a SQLite database
+    # directly from a file-like object.
+    with tempfile.NamedTemporaryFile(delete=True) as temporary_file:
+      file_object.seek(0, os.SEEK_SET)
+      file_data = file_object.read(self._READ_BUFFER_SIZE)
+      while file_data:
+        temporary_file.write(file_data)
+        file_data = file_object.read(self._READ_BUFFER_SIZE)
 
-    file_object.seek(0, os.SEEK_SET)
-    file_data = file_object.read(16)
-    return file_data == b'SQLite format 3\x00'
+      return self.GetDatabaseSchema(temporary_file.name)
+
+  def ExtractSchemas(self, path, options=None):
+    """Extracts database schemas from the path.
+
+    Args:
+      path (str): path of a SQLite 3 database file or storage media image
+          containing SQLite 3 database files.
+      options (Optional[dfvfs.VolumeScannerOptions]): volume scanner options. If
+          None the default volume scanner options are used, which are defined in
+          the dfVFS VolumeScannerOptions class.
+
+    Yields:
+      tuple[str, dict[str, str]]: path segments and schema as an SQL query per
+          table name.
+    """
+    entry_lister = file_entry_lister.FileEntryLister(mediator=self._mediator)
+
+    base_path_specs = entry_lister.GetBasePathSpecs(path, options=options)
+    if not base_path_specs:
+      database_schema = self.GetDatabaseSchema(path)
+      if not database_schema:
+        logging.warning(
+            f'Unable to determine schema from database file: {path:s}')
+      else:
+        path_segments = os.path.split(path)
+        yield path_segments, database_schema
+
+    else:
+      for file_entry, path_segments in entry_lister.ListFileEntries(
+          base_path_specs):
+        if file_entry.size < 16:
+          continue
+
+        file_object = file_entry.GetFileObject()
+        if not self._CheckSignature(file_object):
+          continue
+
+        display_path = self._GetDisplayPath(path_segments, '')
+        logging.info(f'Extracting schema from database file: {display_path:s}')
+
+        database_schema = self._GetDatabaseSchemaFromFileObject(file_object)
+        if not database_schema:
+          logging.warning((
+              f'Unable to determine schema from database file: '
+              f'{display_path:s}'))
+          continue
+
+        yield path_segments, database_schema
 
   def FormatSchema(self, schema, output_format):
     """Formats a schema into a word-wrapped string.
@@ -207,24 +315,3 @@ class SQLiteSchemaExtractor(object):
       database.close()
 
     return schema
-
-  def GetDatabaseSchemaFromFileObject(self, file_object):
-    """Retrieves schema from given database file-like object.
-
-    Args:
-      file_object (dfvfs.FileIO): file-like object of the database.
-
-    Returns:
-      dict[str, str]: schema as an SQL query per table name or None if
-          the schema could not be retrieved.
-    """
-    # TODO: find an alternative solution that can read a SQLite database
-    # directly from a file-like object.
-    with tempfile.NamedTemporaryFile(delete=True) as temporary_file:
-      file_object.seek(0, os.SEEK_SET)
-      file_data = file_object.read(self._READ_BUFFER_SIZE)
-      while file_data:
-        temporary_file.write(file_data)
-        file_data = file_object.read(self._READ_BUFFER_SIZE)
-
-      return self.GetDatabaseSchema(temporary_file.name)
