@@ -25,10 +25,22 @@ def Main():
   argument_parser = argparse.ArgumentParser(description=(
       'Extracts the schema of SQLite database files.'))
 
+  # TODO: add data group.
+  argument_parser.add_argument(
+      '--artifact_definitions', '--artifact-definitions',
+      dest='artifact_definitions', type=str, metavar='PATH', action='store',
+      help=('Path to a directory or file containing the artifact definition '
+            '.yaml files.'))
+
   # TODO: add output group.
   argument_parser.add_argument(
+      '--format', dest='format', action='store', type=str,
+      choices=['text', 'yaml'], default='yaml', metavar='FORMAT',
+      help='Output format.')
+
+  argument_parser.add_argument(
       '--output', dest='output', action='store', metavar='./sqlite-kb/',
-      default=None, help='directory to write the output to.')
+      default=None, help='Directory to write the output to.')
 
   # TODO: add source group.
   argument_parser.add_argument(
@@ -77,6 +89,13 @@ def Main():
     print('')
     return False
 
+  if not options.artifact_definitions:
+    print('Path to artifact definitions is missing.')
+    print('')
+    argument_parser.print_help()
+    print('')
+    return False
+
   if options.output:
     if not os.path.exists(options.output):
       os.mkdir(options.output)
@@ -106,25 +125,40 @@ def Main():
   volume_scanner_options.volumes = mediator.ParseVolumeIdentifiersString(
       options.volumes)
 
-  extractor = schema_extractor.SQLiteSchemaExtractor(mediator=mediator)
+  # TODO: handle data location more elegantly
+  data_location = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+  data_location = os.path.join(data_location, 'data')
+
+  extractor = schema_extractor.SQLiteSchemaExtractor(
+      options.artifact_definitions, data_location, mediator=mediator)
 
   try:
-    for path_segments, database_schema in extractor.ExtractSchemas(
+    for database_identifier, database_schema in extractor.ExtractSchemas(
         options.source, options=volume_scanner_options):
+      if not database_schema:
+        continue
 
-      # TODO: add support to set output format.
-      output_text = extractor.FormatSchema(database_schema, 'yaml')
+      output_text = extractor.FormatSchema(database_schema, options.format)
       if not options.output:
         print(output_text)
       else:
-        output_file = os.path.join(
-            options.output, f'{path_segments[-1]:s}.yaml')
-        if os.path.exists(output_file):
-          logging.warning(f'Output file: {output_file:s} already existst.')
-          continue
+        file_exists = False
+        output_file = None
+        for number in range(1, 99):
+          output_file = os.path.join(options.output, (
+              f'{database_identifier:s}.{number:d}.{options.format:s}'))
+          if not os.path.exists(output_file):
+            break
 
-        with open(output_file, 'w', encoding='utf-8') as output_file_object:
-          output_file_object.write(output_text)
+          with open(output_file, 'r', encoding='utf-8') as existing_file_object:
+            existing_output_text = existing_file_object.read()
+            if output_text == existing_output_text:
+              file_exists = True
+              break
+
+        if not file_exists:
+          with open(output_file, 'w', encoding='utf-8') as output_file_object:
+            output_file_object.write(output_text)
 
   except dfvfs_errors.ScannerError as exception:
     print(f'[ERROR] {exception!s}', file=sys.stderr)
