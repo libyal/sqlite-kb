@@ -77,8 +77,8 @@ def Main():
   # TODO: add support for single database file.
 
   argument_parser.add_argument(
-      'source', nargs='?', action='store', metavar='image.raw',
-      default=None, help='path of the storage media image.')
+      'source', nargs='?', action='store', metavar='image.raw', default=None,
+      help='path of a storage media image or SQLite database file.')
 
   options = argument_parser.parse_args()
 
