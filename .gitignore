@@ -13,5 +13,5 @@
 /__pycache__
 /build
 /dist
-/esedbrc.egg-info
+/sqliterc.egg-info
 
