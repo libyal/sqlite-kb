@@ -22,6 +22,9 @@ from sqliterc import yaml_definitions_file
 class SQLiteSchemaExtractor(object):
   """SQLite database file schema extractor."""
 
+  _DATABASE_DEFINITIONS_FILE = (
+      os.path.join(os.path.dirname(__file__), 'data', 'known_databases.yaml'))
+
   _READ_BUFFER_SIZE = 16 * 1024 * 1024
 
   _SCHEMA_QUERY = (
@@ -53,9 +56,9 @@ class SQLiteSchemaExtractor(object):
     elif os.path.isfile(artifact_definitions):
       self._artifacts_registry.ReadFromFile(reader, artifact_definitions)
 
-    path = os.path.join(data_location, 'known_databases.yaml')
     definitions_file = yaml_definitions_file.YAMLDatabaseDefinitionsFile()
-    for database_definition in definitions_file.ReadFromFile(path):
+    for database_definition in definitions_file.ReadFromFile(
+        self._DATABASE_DEFINITIONS_FILE):
       artifact_definition = self._artifacts_registry.GetDefinitionByName(
           database_definition.artifact_definition)
       if not artifact_definition:
@@ -157,6 +160,10 @@ class SQLiteSchemaExtractor(object):
         query_start = f'\'{table_name:s}\''
       elif query[0] == '"':
         query_start = f'"{table_name:s}"'
+      elif query[0] == '`':
+        query_start = f'`{table_name:s}`'
+      elif query[0] == '[':
+        query_start = f'[{table_name:s}]'
       else:
         query_start = table_name
 
@@ -179,6 +186,9 @@ class SQLiteSchemaExtractor(object):
           _, _, query = query.partition('\n')
           query = query.lstrip()
 
+        if query.startswith('CONSTRAINT'):
+          break
+
         if query.startswith('UNIQUE'):
           # TODO: set unique status in column definition.
           break
@@ -187,12 +197,14 @@ class SQLiteSchemaExtractor(object):
           # TODO: set primary key status in column definition.
           break
 
+        # TODO: handle CONSTRAINT
+
         column, _, query = query.partition(',')
         query = query.lstrip()
 
         column_segments = column.split(' ')
         column_name = column_segments[0]
-        if column_name[0] in ('\'', '"'):
+        if column_name[0] in ('\'', '"', '`', '['):
           column_name = column_name[1:-1]
 
         if column_name in column_definitions:

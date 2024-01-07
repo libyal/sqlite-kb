@@ -1,5 +1,20 @@
 # sqlite-kb database definitions
 ---
+artifact_definition: ChromiumBasedBrowsersCookiesDatabaseFile
+database_identifier: chromium_Cookies
+---
+artifact_definition: ChromiumBasedBrowsersFaviconsDatabaseFile
+database_identifier: chromium_Favicons
+---
+artifact_definition: ChromiumBasedBrowsersHistoryDatabaseFile
+database_identifier: chromium_History
+---
+artifact_definition: ChromiumBasedBrowsersLoginDataDatabaseFile
+database_identifier: chromium_Login_Data
+---
+artifact_definition: ChromiumBasedBrowsersWebDataDatabaseFile
+database_identifier: chromium_Web_Data
+---
 artifact_definition: MacOSAddressBookImagesSQLiteDatabaseFile
 database_identifier: macos_AddressBookImages.sqlitedb
 ---
@@ -128,3 +143,18 @@ database_identifier: safari_TouchIconCacheSettings.db
 ---
 artifact_definition: WebKitPubSubSQLiteDatabaseFile
 database_identifier: webkit_Database.sqlite3
+---
+artifact_definition: WindowsActivitiesCacheDatabase
+database_identifier: windows_ActivitiesCache.db
+---
+artifact_definition: WindowsPushNotificationDatabaseFile
+database_identifier: windows_wpndatabase.db
+---
+artifact_definition: WindowsStateRepositoryDeploymentDatabaseFile
+database_identifier: windows_StateRepository-Deployment.srd
+---
+artifact_definition: WindowsStateRepositoryMachineDatabaseFile
+database_identifier: windows_StateRepository-Machine.srd
+---
+artifact_definition: WindowsUpdateStoreDatabaseFile
+database_identifier: windows_UpdateStore_store.db
