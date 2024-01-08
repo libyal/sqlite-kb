@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Tests for the YAML-based database definitions file."""
 
-import io
 import unittest
 
 from sqliterc import yaml_definitions_file
@@ -52,7 +51,7 @@ class YAMLDatabaseDefinitionsFileTest(test_lib.BaseTestCase):
 
     test_definitions_file = yaml_definitions_file.YAMLDatabaseDefinitionsFile()
 
-    with io.open(test_file_path, 'r', encoding='utf-8') as file_object:
+    with open(test_file_path, 'r', encoding='utf-8') as file_object:
       definitions = list(test_definitions_file._ReadFromFileObject(file_object))
 
     self.assertEqual(len(definitions), 5)
