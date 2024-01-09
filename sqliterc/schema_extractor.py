@@ -25,6 +25,8 @@ class SQLiteSchemaExtractor(object):
   _DATABASE_DEFINITIONS_FILE = (
       os.path.join(os.path.dirname(__file__), 'data', 'known_databases.yaml'))
 
+  _MINIMUM_FILE_SIZE = 16
+
   _READ_BUFFER_SIZE = 16 * 1024 * 1024
 
   _SCHEMA_QUERY = (
@@ -33,28 +35,26 @@ class SQLiteSchemaExtractor(object):
       'WHERE type = "table" AND tbl_name != "xp_proc" '
       'AND tbl_name != "sqlite_sequence"')
 
-  def __init__(
-      self, artifact_definitions, data_location, mediator=None):
+  def __init__(self, artifact_definitions, mediator=None):
     """Initializes a SQLite database file schema extractor.
 
     Args:
       artifact_definitions (str): path to a single artifact definitions
           YAML file or a directory of definitions YAML files.
-      data_location (str): path to the SQLite-kb data files.
       mediator (Optional[dfvfs.VolumeScannerMediator]): a volume scanner
           mediator.
     """
     super(SQLiteSchemaExtractor, self).__init__()
     self._artifacts_registry = artifacts_registry.ArtifactDefinitionsRegistry()
-    self._data_location = data_location
     self._known_database_definitions = {}
     self._mediator = mediator
 
-    reader = artifacts_reader.YamlArtifactsReader()
-    if os.path.isdir(artifact_definitions):
-      self._artifacts_registry.ReadFromDirectory(reader, artifact_definitions)
-    elif os.path.isfile(artifact_definitions):
-      self._artifacts_registry.ReadFromFile(reader, artifact_definitions)
+    if artifact_definitions:
+      reader = artifacts_reader.YamlArtifactsReader()
+      if os.path.isdir(artifact_definitions):
+        self._artifacts_registry.ReadFromDirectory(reader, artifact_definitions)
+      elif os.path.isfile(artifact_definitions):
+        self._artifacts_registry.ReadFromFile(reader, artifact_definitions)
 
     definitions_file = yaml_definitions_file.YAMLDatabaseDefinitionsFile()
     for database_definition in definitions_file.ReadFromFile(
@@ -232,36 +232,6 @@ class SQLiteSchemaExtractor(object):
     lines.append('')
     return '\n'.join(lines)
 
-  def _GetDatabaseSchema(self, database_path):
-    """Retrieves schema from given database.
-
-    Args:
-      database_path (str): file path to database.
-
-    Returns:
-      dict[str, str]: schema as an SQL query per table name or None if
-          the schema could not be retrieved.
-    """
-    schema = None
-
-    database = sqlite3.connect(database_path)
-    database.row_factory = sqlite3.Row
-
-    try:
-      cursor = database.cursor()
-
-      rows = cursor.execute(self._SCHEMA_QUERY)
-
-      schema = dict(rows)
-
-    except sqlite3.DatabaseError as exception:
-      logging.error(f'Unable to query schema with error: {exception!s}')
-
-    finally:
-      database.close()
-
-    return schema
-
   def _GetDatabaseIdentifier(self, path_segments):
     """Determines the database identifier.
 
@@ -319,6 +289,37 @@ class SQLiteSchemaExtractor(object):
               return database_identifier
 
     return None
+
+  def _GetDatabaseSchema(self, database_path):
+    """Retrieves schema from given database.
+
+    Args:
+      database_path (str): file path to database.
+
+    Returns:
+      dict[str, str]: schema as an SQL query per table name or None if
+          the schema could not be retrieved.
+    """
+    schema = None
+
+    database = sqlite3.connect(database_path)
+    database.row_factory = sqlite3.Row
+
+    try:
+      cursor = database.cursor()
+
+      rows = cursor.execute(self._SCHEMA_QUERY)
+
+      schema = dict(rows)
+
+    except sqlite3.DatabaseError as exception:
+      logging.error(f'Unable to query schema with error: {exception!s}')
+
+    finally:
+      database.close()
+
+    # TODO: move schema into object.
+    return schema
 
   def _GetDatabaseSchemaFromFileObject(self, file_object):
     """Retrieves schema from given database file-like object.
@@ -379,24 +380,19 @@ class SQLiteSchemaExtractor(object):
 
     Yields:
       tuple[str, dict[str, str]]: known database type identifier or the name of
-          the SQLite database file if not known and schema as an SQL query per
-          table name.
+          the SQLite database file if not known and schema.
     """
     entry_lister = file_entry_lister.FileEntryLister(mediator=self._mediator)
 
     base_path_specs = entry_lister.GetBasePathSpecs(path, options=options)
     if not base_path_specs:
-      database_schema = self._GetDatabaseSchema(path)
-      if database_schema is None:
-        logging.warning(
-            f'Unable to determine schema from database file: {path:s}')
-      else:
-        yield os.path.basename(path), database_schema
+      logging.warning(
+          f'Unable to determine base path specifications from: {path:s}')
 
     else:
       for file_entry, path_segments in entry_lister.ListFileEntries(
           base_path_specs):
-        if not file_entry.IsFile() or file_entry.size < 16:
+        if not file_entry.IsFile() or file_entry.size < self._MINIMUM_FILE_SIZE:
           continue
 
         file_object = file_entry.GetFileObject()
@@ -414,6 +410,8 @@ class SQLiteSchemaExtractor(object):
               f'{display_path:s}'))
           continue
 
+        # TODO: improve support to determine identifier for single database
+        # file.
         database_identifier = self._GetDatabaseIdentifier(path_segments)
         if not database_identifier:
           logging.warning((

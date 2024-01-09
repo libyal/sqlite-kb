@@ -74,8 +74,6 @@ def Main():
           'as: "1,3..5". The first volume is 1. All volumes can be specified '
           'with: "all".'))
 
-  # TODO: add support for single database file.
-
   argument_parser.add_argument(
       'source', nargs='?', action='store', metavar='image.raw', default=None,
       help='path of a storage media image or SQLite database file.')
@@ -125,12 +123,8 @@ def Main():
   volume_scanner_options.volumes = mediator.ParseVolumeIdentifiersString(
       options.volumes)
 
-  # TODO: handle data location more elegantly
-  data_location = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-  data_location = os.path.join(data_location, 'data')
-
   extractor = schema_extractor.SQLiteSchemaExtractor(
-      options.artifact_definitions, data_location, mediator=mediator)
+      options.artifact_definitions, mediator=mediator)
 
   try:
     for database_identifier, database_schema in extractor.ExtractSchemas(
@@ -145,8 +139,8 @@ def Main():
         file_exists = False
         output_file = None
         for number in range(1, 99):
-          output_file = os.path.join(options.output, (
-              f'{database_identifier:s}.{number:d}.{options.format:s}'))
+          filename = f'{database_identifier:s}.{number:d}.{options.format:s}'
+          output_file = os.path.join(options.output, filename)
           if not os.path.exists(output_file):
             break
 
