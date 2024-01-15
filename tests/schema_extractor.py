@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 """Tests for the SQLite database file schema extractor."""
 
+import io
+import os
 import unittest
+
+import artifacts
 
 from sqliterc import schema_extractor
 
@@ -14,13 +18,31 @@ class SQLiteSchemaExtractorTest(test_lib.BaseTestCase):
 
   # pylint: disable=protected-access
 
+  _ARTIFACT_DEFINITIONS_PATH = os.path.join(
+        os.path.dirname(artifacts.__file__), 'data')
+  if not os.path.isdir(_ARTIFACT_DEFINITIONS_PATH):
+    _ARTIFACT_DEFINITIONS_PATH = os.path.join(
+        '/', 'usr', 'share', 'artifacts')
+
   def testInitialize(self):
     """Tests the __init__ function."""
-    # TODO: pass artifact definitions path.
-    test_extractor = schema_extractor.SQLiteSchemaExtractor(None)
+    test_extractor = schema_extractor.SQLiteSchemaExtractor(
+        self._ARTIFACT_DEFINITIONS_PATH)
     self.assertIsNotNone(test_extractor)
 
-  # TODO: add tests for _CheckSignature
+  def testCheckSignature(self):
+    """Tests the _CheckSignature function."""
+    test_extractor = schema_extractor.SQLiteSchemaExtractor(
+        self._ARTIFACT_DEFINITIONS_PATH)
+
+    file_object = io.BytesIO(b'SQLite format 3\x00')
+    result = test_extractor._CheckSignature(file_object)
+    self.assertTrue(result)
+
+    file_object = io.BytesIO(b'\xff' * 16)
+    result = test_extractor._CheckSignature(file_object)
+    self.assertFalse(result)
+
   # TODO: add tests for _FormatSchemaAsText
   # TODO: add tests for _FormatSchemaAsYAML
   # TODO: add tests for _GetDatabaseSchema
