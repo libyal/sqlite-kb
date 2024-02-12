@@ -10,7 +10,7 @@ from tests import test_lib
 
 
 class ColumnDefinitionTest(test_lib.BaseTestCase):
-  """Tests for the database column definition."""
+  """Tests for the column definition."""
 
   def testInitialize(self):
     """Tests the __init__ function."""

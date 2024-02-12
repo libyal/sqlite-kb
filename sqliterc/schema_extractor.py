@@ -69,10 +69,10 @@ class SQLiteSchemaExtractor(object):
             database_definition.database_identifier] = artifact_definition
 
   def _CheckSignature(self, file_object):
-    """Checks the signature of a given database file-like object.
+    """Checks the signature of a given file-like object.
 
     Args:
-      file_object (dfvfs.FileIO): file-like object of the database.
+      file_object (dfvfs.FileIO): file-like object of the SQLite database.
 
     Returns:
       bool: True if the signature matches that of a SQLite database, False
@@ -290,11 +290,11 @@ class SQLiteSchemaExtractor(object):
 
     return None
 
-  def _GetDatabaseSchema(self, database_path):
-    """Retrieves schema from given database.
+  def _GetDatabaseSchema(self, path):
+    """Retrieves schema from given SQLite 3 database.
 
     Args:
-      database_path (str): file path to database.
+      path (str): path to SQLite 3 database file.
 
     Returns:
       dict[str, str]: schema as an SQL query per table name or None if
@@ -302,7 +302,7 @@ class SQLiteSchemaExtractor(object):
     """
     schema = None
 
-    database = sqlite3.connect(database_path)
+    database = sqlite3.connect(path)
     database.row_factory = sqlite3.Row
 
     try:
@@ -322,10 +322,10 @@ class SQLiteSchemaExtractor(object):
     return schema
 
   def _GetDatabaseSchemaFromFileObject(self, file_object):
-    """Retrieves schema from given database file-like object.
+    """Retrieves schema from given SQLite 3 database file-like object.
 
     Args:
-      file_object (dfvfs.FileIO): file-like object of the database.
+      file_object (dfvfs.FileIO): file-like object of the SQLite 3 database.
 
     Returns:
       dict[str, str]: schema as an SQL query per table name or None if
@@ -423,7 +423,7 @@ class SQLiteSchemaExtractor(object):
         yield database_identifier, database_schema
 
   def FormatSchema(self, schema, output_format):
-    """Formats a schema into a word-wrapped string.
+    """Formats a schema into the output format.
 
     Args:
       schema (dict[str, str]): schema as an SQL query per table name.
