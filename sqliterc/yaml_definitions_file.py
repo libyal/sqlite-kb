@@ -18,7 +18,7 @@ class YAMLDatabaseDefinitionsFile(object):
   Where:
   * artifact_definition, name of the corresponding Digital Forensics Artifact
       definition.
-  * database_identifier, identifier of the database type.
+  * database_identifier, identifier of the database.
   """
 
   _SUPPORTED_KEYS = frozenset([

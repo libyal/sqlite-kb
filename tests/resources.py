@@ -14,8 +14,8 @@ class ColumnDefinitionTest(test_lib.BaseTestCase):
 
   def testInitialize(self):
     """Tests the __init__ function."""
-    column_definition = resources.ColumnDefinition()
-    self.assertIsNotNone(column_definition)
+    test_definition = resources.ColumnDefinition()
+    self.assertIsNotNone(test_definition)
 
 
 class DatabaseDefinitionTest(test_lib.BaseTestCase):
@@ -23,8 +23,8 @@ class DatabaseDefinitionTest(test_lib.BaseTestCase):
 
   def testInitialize(self):
     """Tests the __init__ function."""
-    database_definition = resources.DatabaseDefinition()
-    self.assertIsNotNone(database_definition)
+    test_definition = resources.DatabaseDefinition()
+    self.assertIsNotNone(test_definition)
 
 
 if __name__ == '__main__':

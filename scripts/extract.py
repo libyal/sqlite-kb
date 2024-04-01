@@ -46,7 +46,7 @@ def Main():
   command_line.AddStorageMediaImageCLIArguments(argument_parser)
 
   argument_parser.add_argument(
-      'source', nargs='?', action='store', metavar='image.raw', default=None,
+      'source', nargs='?', action='store', metavar='PATH', default=None,
       help='path of a storage media image or SQLite database file.')
 
   options = argument_parser.parse_args()

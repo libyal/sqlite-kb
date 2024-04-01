@@ -23,7 +23,7 @@ class DatabaseDefinition(object):
   Attributes:
     artifact_definition (str): name of the corresponding Digital Forensics
         Artifact definition.
-    database_identifier (str): identifier of the database type.
+    database_identifier (str): identifier of the database.
   """
 
   def __init__(self):
