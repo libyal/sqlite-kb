@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sqliterc"
-version = "20251126"
+version = "20251128"
 description = "SQLite database resources (sqliterc)"
 maintainers = [
     { name = "Joachim Metz", email = "joachim.metz@gmail.com" },
@@ -56,6 +56,9 @@ dependencies = [
     "pytsk3 >= 20210419",
     "xattr >= 0.7.2 ; platform_system != \"Windows\"",
 ]
+
+[project.scripts]
+extract = "sqliterc.scripts.extract:Main"
 
 [project.urls]
 Documentation = "https://sqliterc.readthedocs.io/en/latest"
