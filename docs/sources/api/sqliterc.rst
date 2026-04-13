@@ -1,6 +1,14 @@
 sqliterc package
 ================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   sqliterc.scripts
+
 Submodules
 ----------
 

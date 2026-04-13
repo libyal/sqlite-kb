@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sqliterc"
-version = "20251128"
+version = "20260413"
 description = "SQLite database resources (sqliterc)"
 maintainers = [
     { name = "Joachim Metz", email = "joachim.metz@gmail.com" },
