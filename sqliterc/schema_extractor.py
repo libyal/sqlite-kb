@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """SQLite database file schema extractor."""
 
 import logging
@@ -19,7 +18,7 @@ from sqliterc import resources
 from sqliterc import yaml_definitions_file
 
 
-class SQLiteSchemaExtractor(object):
+class SQLiteSchemaExtractor:
   """SQLite database file schema extractor."""
 
   _DATABASE_DEFINITIONS_FILE = (
@@ -44,7 +43,7 @@ class SQLiteSchemaExtractor(object):
       mediator (Optional[dfvfs.VolumeScannerMediator]): a volume scanner
           mediator.
     """
-    super(SQLiteSchemaExtractor, self).__init__()
+    super().__init__()
     self._artifacts_registry = artifacts_registry.ArtifactDefinitionsRegistry()
     self._known_database_definitions = {}
     self._mediator = mediator

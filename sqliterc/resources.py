@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 """SQLite database resources."""
 
 
-class ColumnDefinition(object):
+class ColumnDefinition:
   """Column definition.
 
   Attributes:
@@ -12,12 +11,12 @@ class ColumnDefinition(object):
 
   def __init__(self):
     """Initializes a column definition."""
-    super(ColumnDefinition, self).__init__()
+    super().__init__()
     self.name = None
     self.value_type = None
 
 
-class DatabaseDefinition(object):
+class DatabaseDefinition:
   """Database definition.
 
   Attributes:
@@ -28,6 +27,6 @@ class DatabaseDefinition(object):
 
   def __init__(self):
     """Initializes a database definition."""
-    super(DatabaseDefinition, self).__init__()
+    super().__init__()
     self.artifact_definition = None
     self.database_identifier = None

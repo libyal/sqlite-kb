@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sqliterc"
-version = "20260413"
+version = "20260501"
 description = "SQLite database resources (sqliterc)"
 maintainers = [
     { name = "Joachim Metz", email = "joachim.metz@gmail.com" },
@@ -65,12 +65,10 @@ Documentation = "https://sqliterc.readthedocs.io/en/latest"
 Homepage = "https://github.com/libyal/sqlite-kb"
 Repository = "https://github.com/libyal/sqlite-kb"
 
+[tool.setuptools]
+package-dir = {"sqliterc" = "sqliterc"}
+
 [tool.setuptools.package-data]
 sqliterc = [
     "data/*.yaml",
 ]
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["sqliterc"]
-exclude = ["docs", "tests", "tests.*", "utils"]
