@@ -9,22 +9,22 @@ from tests import test_lib
 
 
 class ColumnDefinitionTest(test_lib.BaseTestCase):
-  """Tests for the column definition."""
+    """Tests for the column definition."""
 
-  def testInitialize(self):
-    """Tests the __init__ function."""
-    test_definition = resources.ColumnDefinition()
-    self.assertIsNotNone(test_definition)
+    def testInitialize(self):
+        """Tests the __init__ function."""
+        test_definition = resources.ColumnDefinition()
+        self.assertIsNotNone(test_definition)
 
 
 class DatabaseDefinitionTest(test_lib.BaseTestCase):
-  """Tests for the database definition."""
+    """Tests for the database definition."""
 
-  def testInitialize(self):
-    """Tests the __init__ function."""
-    test_definition = resources.DatabaseDefinition()
-    self.assertIsNotNone(test_definition)
+    def testInitialize(self):
+        """Tests the __init__ function."""
+        test_definition = resources.DatabaseDefinition()
+        self.assertIsNotNone(test_definition)
 
 
-if __name__ == '__main__':
-  unittest.main()
+if __name__ == "__main__":
+    unittest.main()
