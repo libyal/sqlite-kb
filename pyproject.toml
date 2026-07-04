@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sqliterc"
-version = "20260516"
+version = "20260704"
 description = "SQLite database resources (sqliterc)"
 maintainers = [
     { name = "Joachim Metz", email = "joachim.metz@gmail.com" },
@@ -74,6 +74,14 @@ include = "\\.pyi?$"
 black = true
 non-cap = []
 non-strict = true
+
+[tool.l2tdevtools]
+name = "SQLite database knowledge base"
+status = "experimental"
+description = """
+sqliterc is a Python module part of sqlite-kb to allow reuse of SQLite \
+database resources. \
+"""
 
 [tool.setuptools]
 package-dir = {"sqliterc" = "sqliterc"}
